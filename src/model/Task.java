@@ -15,6 +15,11 @@ public class Task {
         this.done = false;
     }
 
+    public Task(int id, String description, String title, boolean done) {
+        this(id, description, title);
+        this.done = done;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }

@@ -10,10 +10,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -183,9 +180,18 @@ public class View {
             descriptionText.setFill(Color.WHITE);
             descriptionText.setWrappingWidth(300); // nếu mô tả dài thì bọc dòng
 
+            CheckBox doneButton = new CheckBox();
+            doneButton.setSelected(temp.isDone());
+
+            doneButton.setOnAction(e -> {
+                MainController.tickDoneTask(temp);
+                temp.setDone(!temp.isDone());
+            });
+            HBox titleBox = new HBox();
+            titleBox.getChildren().addAll(titleText, doneButton);
             VBox textVBox = new VBox(5); // khoảng cách giữa các dòng text
             textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10;");
-            textVBox.getChildren().addAll(titleText, descriptionText);
+            textVBox.getChildren().addAll(titleBox, descriptionText);
 
             HBox taskHBox = new HBox(0);
             Button removeTaskButton = new Button("X");

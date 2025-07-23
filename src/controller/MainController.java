@@ -65,4 +65,9 @@ public class MainController {
     {
         DBconnect.removeTaskFromDB(removedTask);
     }
+
+    public static void tickDoneTask(Task doneTask)
+    {
+        DBconnect.tickDoneTaskInDB(doneTask);
+    }
 }
