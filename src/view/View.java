@@ -3,15 +3,17 @@ package view;
 
 import controller.MainController;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
@@ -22,8 +24,6 @@ import javafx.scene.text.Font;
 import javafx.scene.paint.Color;
 
 
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class View {
@@ -101,39 +101,43 @@ public class View {
     public static Scene getMainView(String username)
     {
         VBox root = new VBox(10);
-        Scene scene = new Scene(root, 800, 600);
-        root.setStyle("-fx-background-color: #000000;"); // đổi màu nền VBox
+        ScrollPane scrollPane = new ScrollPane(root);
+        scrollPane.setFitToWidth(true);
+        Scene scene = new Scene(scrollPane, 800, 600);
+        root.setStyle("-fx-background-color: #938F87;"); // đổi màu nền VBox
         Button addTaskButton = new Button("+");
-        addTaskButton.setStyle("-fx-pref-width: 150; -fx-pref-height: 50; -fx-background-color: #1DEFFE");
-        root.getChildren().addAll(addTaskButton);
+        addTaskButton.setStyle("-fx-pref-width: 800; -fx-font-size: 50px;  -fx-pref-height: 50; -fx-background-color: #EFAB2B");
+
+        VBox taskVBox = new VBox(0);
+
+        TextField titleFeild = new TextField();
+        TextField newTaskField = new TextField();
+        newTaskField.setPromptText("Type your task...");
+        newTaskField.setStyle("""
+				    -fx-font-size: 14px;
+				    -fx-background-radius: 10;
+				    -fx-border-radius: 10;
+				    -fx-border-color: white;
+				    -fx-border-width: 2;
+				    -fx-padding: 5 10 5 10;
+				""");
+
+        titleFeild.setPromptText("Title");
+        newTaskField.setStyle("""
+				    -fx-font-size: 14px;
+				    -fx-background-radius: 10;
+				    -fx-border-radius: 10;
+				    -fx-border-color: white;
+				    -fx-border-width: 2;
+				    -fx-padding: 5 10 5 10;
+				""");
+
+        root.getChildren().addAll(addTaskButton, taskVBox);
 
         VBox allTasks = showAllTaskOfUser(username);
         root.getChildren().add(allTasks);
 
         addTaskButton.setOnAction(e ->{
-            TextField titleFeild = new TextField();
-            TextField newTaskField = new TextField();
-            Button removeTaskButton = new Button("-");
-            newTaskField.setPromptText("Type your task...");
-            newTaskField.setStyle("""
-				    -fx-font-size: 14px;
-				    -fx-background-radius: 10;
-				    -fx-border-radius: 10;
-				    -fx-border-color: white;
-				    -fx-border-width: 2;
-				    -fx-padding: 5 10 5 10;
-				""");
-
-            titleFeild.setPromptText("Title");
-            newTaskField.setStyle("""
-				    -fx-font-size: 14px;
-				    -fx-background-radius: 10;
-				    -fx-border-radius: 10;
-				    -fx-border-color: white;
-				    -fx-border-width: 2;
-				    -fx-padding: 5 10 5 10;
-				""");
-            VBox taskVBox = new VBox(0);
             taskVBox.getChildren().addAll(titleFeild, newTaskField);
             taskVBox.requestFocus();
             scene.setOnKeyPressed(event -> {
@@ -141,17 +145,20 @@ public class View {
                     System.out.println("ENTER được nhấn");
                     String newTaskInput = newTaskField.getText();
                     String titleInput = titleFeild.getText();
-                    MainController.addNewTask(newTaskInput, titleInput, username);
+                    if(titleInput == "") titleInput = "Untitle";
+                    if(newTaskInput != "")
+                    {
+                        MainController.addNewTask(newTaskInput, titleInput, username);
+                    }
+                    taskVBox.getChildren().clear();
                 }
-
+                titleFeild.clear();
+                newTaskField.clear();
                 root.getChildren().clear();
-                root.getChildren().addAll(addTaskButton, showAllTaskOfUser(username));
+                root.getChildren().addAll(addTaskButton, taskVBox, showAllTaskOfUser(username));
 
             });
-            root.getChildren().add(taskVBox);
         });
-
-
 
         return scene;
     }
@@ -159,11 +166,12 @@ public class View {
     public static VBox showAllTaskOfUser(String username)
     {
         //load các tasks trong db của user
-        VBox root = new VBox();
+        VBox root = new VBox(2);
         List<Task> list;
         list = MainController.showAllTask(username);
-        for(Task temp : list)
+        for(int i = 0; i < list.size() - 1; i++)
         {
+            Task temp = list.get(i);
             Text titleText = new Text(temp.getTitle());
             titleText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
             titleText.setFill(Color.GREEN);
@@ -172,11 +180,86 @@ public class View {
             descriptionText.setFill(Color.WHITE);
             descriptionText.setWrappingWidth(300); // nếu mô tả dài thì bọc dòng
 
+            CheckBox doneButton = new CheckBox();
+            doneButton.setSelected(temp.isDone());
+
+            doneButton.setOnAction(e -> {
+                MainController.tickDoneTask(temp);
+                temp.setDone(!temp.isDone());
+            });
+            HBox titleBox = new HBox();
+            titleBox.getChildren().addAll(titleText, doneButton);
             VBox textVBox = new VBox(5); // khoảng cách giữa các dòng text
             textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10;");
-            textVBox.getChildren().addAll(titleText, descriptionText);
+            textVBox.getChildren().addAll(titleBox, descriptionText);
 
-            root.getChildren().add(textVBox); // root là VBox chứa toàn bộ task
+            HBox taskHBox = new HBox(0);
+            Button removeTaskButton = new Button("X");
+            removeTaskButton.setPrefWidth(40);
+            removeTaskButton.setMaxHeight(Double.MAX_VALUE); // chiếm full chiều cao
+
+            removeTaskButton.setStyle(
+                    "-fx-background-color: transparent; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-font-size: 14px;"
+            );
+
+// Đổi style khi hover: dùng PseudoClass trong CSS nội bộ
+            // Hover: to ra
+            removeTaskButton.setOnMouseEntered(e -> {
+                Timeline timeline = new Timeline(
+                        new KeyFrame(Duration.millis(300),
+                                new KeyValue(removeTaskButton.prefWidthProperty(), 75))
+                );
+                timeline.play();
+                removeTaskButton.setStyle(
+                        "-fx-background-color: #e74c3c; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-font-weight: bold; " +
+                                "-fx-font-size: 30px; " +
+                                "-fx-background-radius: 10;"
+                );
+            });
+
+// Rời chuột: thu lại
+            removeTaskButton.setOnMouseExited(e -> {
+                Timeline timeline = new Timeline(
+                        new KeyFrame(Duration.millis(300),
+                                new KeyValue(removeTaskButton.prefWidthProperty(), 40))
+                );
+                timeline.play();
+                removeTaskButton.setStyle(
+                        "-fx-background-color: transparent; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-font-weight: bold; " +
+                                "-fx-font-size: 14px; " +
+                                "-fx-background-radius: 10;"
+                );
+            });
+
+
+            textVBox.setOnMouseEntered(e -> textVBox.setStyle("-fx-background-color: #34495e; -fx-padding: 10; -fx-background-radius: 10;"));
+            textVBox.setOnMouseExited(e -> textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10;"));
+            textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 2);");
+
+            HBox.setHgrow(textVBox, Priority.ALWAYS);
+            removeTaskButton.setMaxWidth(40); // hoặc setMin/Pref cho đẹp
+            removeTaskButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE); // Fill full width & height
+            VBox.setVgrow(removeTaskButton, Priority.ALWAYS);               // Cho phép button mở rộng theo chiều cao
+
+            VBox buttonWrapper = new VBox(removeTaskButton);
+            buttonWrapper.setAlignment(Pos.CENTER);
+            buttonWrapper.setMaxHeight(Double.MAX_VALUE);
+
+            taskHBox.getChildren().addAll(textVBox, buttonWrapper);
+
+            removeTaskButton.setOnAction(e ->{
+                root.getChildren().remove(taskHBox);
+                MainController.removeTask(temp);
+            });
+
+            root.getChildren().add(taskHBox); // root là VBox chứa toàn bộ task
         }
         return root;
     }

@@ -51,7 +51,6 @@ public class MainController {
 
     public static void addNewTask(String description, String title, String username)
     {
-        Task newTask =  new Task(title, description);
         DBconnect.addNewTask(description, title, username);
     }
 
@@ -60,5 +59,15 @@ public class MainController {
         List<Task> res = new ArrayList<>();
         res = DBconnect.getAllTaskData(username);
         return res;
+    }
+
+    public static void removeTask(Task removedTask)
+    {
+        DBconnect.removeTaskFromDB(removedTask);
+    }
+
+    public static void tickDoneTask(Task doneTask)
+    {
+        DBconnect.tickDoneTaskInDB(doneTask);
     }
 }

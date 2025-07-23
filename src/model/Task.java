@@ -6,15 +6,18 @@ public class Task {
     private String description;
     private boolean done;
 
-    public Task(String description) {
-        this(description, "Untitled");
-    }
 
     // Constructor đầy đủ
-    public Task(String description, String title) {
+    public Task(int id, String description, String title) {
+        this.id = id;
         this.title = title;
         this.description = description;
         this.done = false;
+    }
+
+    public Task(int id, String description, String title, boolean done) {
+        this(id, description, title);
+        this.done = done;
     }
 
     public void setTitle(String title) {

@@ -12,7 +12,7 @@ public class DBconnect {
         try {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
             System.out.println("Kết nối thành công!");
-            String sql = "SELECT * FROM users WHERE userName = ? and password = ?";
+            String sql = "SELECT * FROM USERS WHERE userName = ? and password = ?";
 
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, username);
@@ -36,7 +36,7 @@ public class DBconnect {
         try {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
             System.out.println("Kết nối thành công!");
-            String sql = "INSERT INTO users VALUES (?, ?)";
+            String sql = "INSERT INTO USERS VALUES (?, ?)";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, username);
             stmt.setString(2, password);
@@ -51,7 +51,7 @@ public class DBconnect {
         }
     }
 
-    public static void addNewTask(String description, String title, String username)
+    public static int addNewTask(String description, String title, String username)
     {
         try{
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
@@ -61,28 +61,24 @@ public class DBconnect {
             PreparedStatement stmt =  conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             PreparedStatement stmt1 = conn.prepareStatement(sql1);
             stmt.setString(1, title);
-            stmt.setString(2,  description);
-            System.out.println("1");
+            stmt.setString(2, description);
             stmt.executeUpdate();
-            System.out.println("2");
             ResultSet generatedKeys = stmt.getGeneratedKeys();
-            System.out.println("3");
             int taskId = -1;
             if (generatedKeys.next()) {
-                System.out.println("4");
                 taskId = generatedKeys.getInt(1);
             }
-            System.out.println("5");
             stmt1.setString(1, username);
             stmt1.setInt(2, taskId);
             stmt1.executeUpdate();
-            System.out.println("6");
             stmt.close();
             stmt1.close();
             conn.close();
+            return taskId;
         }
         catch (SQLException e){
             System.out.println("Lỗi không thể thêm task");
+            return 0;
         }
     }
 
@@ -91,10 +87,12 @@ public class DBconnect {
         try {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
             System.out.println("Kết nối thành công!");
-            String sql = new String("select title, description\n" +
-                    "from TASK \n" +
-                    "join LINKED on LINKED.idTask = TASK.id\n" +
-                    "where LINKED.username = ?");
+            String sql = """
+                    select id, title, description, done
+                    from TASK\s
+                    join LINKED on LINKED.idTask = TASK.id
+                    where LINKED.username = ?
+                    ORDER BY time DESC""";
 
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, username);
@@ -103,7 +101,7 @@ public class DBconnect {
             List<Task> res = new ArrayList<>();
             while(output.next())
             {
-                res.add(new Task(output.getString(1), output.getString(2)));
+                res.add(new Task(output.getInt("id") , output.getString("description"), output.getString("title"), output.getBoolean("done")));
             }
 
             conn.close();
@@ -114,4 +112,49 @@ public class DBconnect {
             throw new RuntimeException(e);
         }
     }
+
+    public static void removeTaskFromDB(Task removedTask) {
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
+            System.out.println("Kết nối thành công!");
+
+            PreparedStatement stmt1 = conn.prepareStatement("DELETE FROM linked WHERE idTask = ?");
+            PreparedStatement stmt2 = conn.prepareStatement("DELETE FROM task WHERE id = ?");
+            int id = removedTask.getId();
+            stmt1.setInt(1, id);
+            stmt2.setInt(1, id);
+
+            stmt1.executeUpdate(); // đổi từ execute() -> executeUpdate()
+            stmt2.executeUpdate();
+
+            stmt1.close();
+            stmt2.close();
+            conn.close();
+            System.out.println("Đã xoá thành công task trong DataBase!!!");
+            System.out.println("ID xoá: " + id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void tickDoneTaskInDB(Task task)
+    {
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
+            System.out.println("Kết nối thành công!");
+
+            PreparedStatement stmt1 = conn.prepareStatement("UPDATE task\n" +
+                    "set done = not done\n" +
+                    "where id = ?");
+            stmt1.setInt(1, task.getId());
+            stmt1.executeUpdate();
+
+            stmt1.close();
+            conn.close();
+            System.out.println("đã tích thành công trong DB");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
