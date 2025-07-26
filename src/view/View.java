@@ -2,6 +2,7 @@ package view;
 
 
 import controller.MainController;
+import controller.SoundController;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -12,9 +13,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -25,6 +24,7 @@ import javafx.scene.paint.Color;
 
 
 import java.util.List;
+import java.util.Objects;
 
 public class View {
     public static Scene getLoginView(Stage stage)
@@ -34,7 +34,7 @@ public class View {
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
         Scene scene = new Scene(root, 600, 600);
-        scene.getStylesheets().add(View.class.getResource("/style.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(View.class.getResource("/style.css")).toExternalForm());
 
         TextField usernameFeild = new TextField();
         TextField passWordFeild = new TextField();
@@ -43,12 +43,6 @@ public class View {
         Label lb = new Label("Sai tên đăng nhập hoặc mật khẩu");
         Label userFeildLabel = new Label("UserName");
         Label passwordLabel = new Label("Password");
-        signInButton.setOpacity(0);
-
-        FadeTransition fade = new FadeTransition(Duration.millis(10000), signInButton);
-        fade.setFromValue(0.0);
-        fade.setToValue(1.0);
-        fade.play();
 
 
         usernameFeild.setPromptText("Type your username");
@@ -77,7 +71,7 @@ public class View {
         passwordVBox.getChildren().addAll(passwordLabel, passWordFeild);
 
 
-        signInButton.setOnAction(e ->{
+        signInButton.setOnAction(_ ->{
             String userNameInput = usernameFeild.getText();
             String userPassWord = passWordFeild.getText();
 
@@ -90,75 +84,87 @@ public class View {
             }
         });
 
-        signUpButton.setOnAction(e ->{
-            MainController.signInUpController(stage, false);
-        });
+        signUpButton.setOnAction(_ -> MainController.signInUpController(stage, false));
 
         root.getChildren().addAll(usernameVBox, passwordVBox, signInButton, signUpButton);
         return scene;
     }
 
-    public static Scene getMainView(String username)
+    public static Scene getMainView(Stage stage, String username)
     {
         VBox root = new VBox(10);
         ScrollPane scrollPane = new ScrollPane(root);
         scrollPane.setFitToWidth(true);
         Scene scene = new Scene(scrollPane, 800, 600);
-        root.setStyle("-fx-background-color: #938F87;"); // đổi màu nền VBox
-        Button addTaskButton = new Button("+");
-        addTaskButton.setStyle("-fx-pref-width: 800; -fx-font-size: 50px;  -fx-pref-height: 50; -fx-background-color: #EFAB2B");
+        scene.getStylesheets().add(
+                Objects.requireNonNull(View.class.getResource("/MainStyle.css")).toExternalForm()
+        );
 
+        //addTaskButton
+        Button addTaskButton = new Button("+ Add a task");
+        addTaskButton.getStyleClass().add("add-task-btn"); // Dùng class trong MainStyle.css
+        Pane addTaskPane = new Pane(addTaskButton);
+        addTaskButton.prefWidthProperty().bind(addTaskPane.widthProperty());
+        addTaskButton.prefHeightProperty().bind(addTaskPane.heightProperty());
+        //
+        //
+        //
+        //
+        //
+        //taskVBox
         VBox taskVBox = new VBox(0);
-
+        VBox.setVgrow(taskVBox, Priority.ALWAYS);
+        taskVBox.prefWidthProperty().bind(addTaskPane.widthProperty());
+        taskVBox.prefHeightProperty().bind(addTaskPane.heightProperty());
         TextField titleFeild = new TextField();
         TextField newTaskField = new TextField();
         newTaskField.setPromptText("Type your task...");
-        newTaskField.setStyle("""
-				    -fx-font-size: 14px;
-				    -fx-background-radius: 10;
-				    -fx-border-radius: 10;
-				    -fx-border-color: white;
-				    -fx-border-width: 2;
-				    -fx-padding: 5 10 5 10;
-				""");
-
         titleFeild.setPromptText("Title");
-        newTaskField.setStyle("""
-				    -fx-font-size: 14px;
-				    -fx-background-radius: 10;
-				    -fx-border-radius: 10;
-				    -fx-border-color: white;
-				    -fx-border-width: 2;
-				    -fx-padding: 5 10 5 10;
-				""");
+        taskVBox.getChildren().addAll(titleFeild, newTaskField);
 
-        root.getChildren().addAll(addTaskButton, taskVBox);
+        //signOutButton
+        Button signOutButton =  new Button("Sign Out");
+        signOutButton.setOnAction(_ -> MainController.signOutController(stage));
 
+        //rootAdd
+        root.getChildren().addAll(addTaskPane, signOutButton);
+
+        //allTasks
         VBox allTasks = showAllTaskOfUser(username);
         root.getChildren().add(allTasks);
 
-        addTaskButton.setOnAction(e ->{
-            taskVBox.getChildren().addAll(titleFeild, newTaskField);
-            taskVBox.requestFocus();
+
+        //addTask event
+        addTaskButton.setOnAction(_ ->{
+            SoundController.playClick();
+            addTaskPane.getChildren().clear();
+            addTaskPane.getChildren().add(taskVBox);
+            FadeTransition fade = new FadeTransition(Duration.millis(1000), taskVBox);
+            fade.setFromValue(0.0);
+            fade.setToValue(1.0);
+            fade.play();
             scene.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ENTER) {
                     System.out.println("ENTER được nhấn");
                     String newTaskInput = newTaskField.getText();
                     String titleInput = titleFeild.getText();
-                    if(titleInput == "") titleInput = "Untitle";
-                    if(newTaskInput != "")
+                    if(Objects.equals(titleInput, "")) titleInput = "Untitle";
+                    if(!Objects.equals(newTaskInput, ""))
                     {
                         MainController.addNewTask(newTaskInput, titleInput, username);
                     }
-                    taskVBox.getChildren().clear();
+                    titleFeild.clear();
+                    newTaskField.clear();
+                    root.getChildren().clear();
+                    addTaskPane.getChildren().clear();
+                    addTaskPane.getChildren().add(addTaskButton);
+                    root.getChildren().addAll(addTaskPane, signOutButton, showAllTaskOfUser(username));
                 }
-                titleFeild.clear();
-                newTaskField.clear();
-                root.getChildren().clear();
-                root.getChildren().addAll(addTaskButton, taskVBox, showAllTaskOfUser(username));
-
             });
+
+            root.setOnMousePressed(_ -> addTaskPane.getChildren().setAll(addTaskButton));
         });
+
 
         return scene;
     }
@@ -172,94 +178,73 @@ public class View {
         for(int i = 0; i < list.size() - 1; i++)
         {
             Task temp = list.get(i);
+
+// Title
             Text titleText = new Text(temp.getTitle());
             titleText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
             titleText.setFill(Color.GREEN);
 
+// Description
             Text descriptionText = new Text(temp.getDescription());
             descriptionText.setFill(Color.WHITE);
-            descriptionText.setWrappingWidth(300); // nếu mô tả dài thì bọc dòng
+            descriptionText.setWrappingWidth(300);
 
+// Checkbox
             CheckBox doneButton = new CheckBox();
             doneButton.setSelected(temp.isDone());
-
-            doneButton.setOnAction(e -> {
+            doneButton.setOnAction(_ -> {
+                SoundController.playTick();
                 MainController.tickDoneTask(temp);
                 temp.setDone(!temp.isDone());
             });
+
+// Title + Checkbox
             HBox titleBox = new HBox();
-            titleBox.getChildren().addAll(titleText, doneButton);
-            VBox textVBox = new VBox(5); // khoảng cách giữa các dòng text
-            textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10;");
-            textVBox.getChildren().addAll(titleBox, descriptionText);
-
-            HBox taskHBox = new HBox(0);
-            Button removeTaskButton = new Button("X");
-            removeTaskButton.setPrefWidth(40);
-            removeTaskButton.setMaxHeight(Double.MAX_VALUE); // chiếm full chiều cao
-
-            removeTaskButton.setStyle(
-                    "-fx-background-color: transparent; " +
-                            "-fx-text-fill: white; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-font-size: 14px;"
-            );
-
-// Đổi style khi hover: dùng PseudoClass trong CSS nội bộ
-            // Hover: to ra
-            removeTaskButton.setOnMouseEntered(e -> {
-                Timeline timeline = new Timeline(
-                        new KeyFrame(Duration.millis(300),
-                                new KeyValue(removeTaskButton.prefWidthProperty(), 75))
-                );
-                timeline.play();
-                removeTaskButton.setStyle(
-                        "-fx-background-color: #e74c3c; " +
-                                "-fx-text-fill: white; " +
-                                "-fx-font-weight: bold; " +
-                                "-fx-font-size: 30px; " +
-                                "-fx-background-radius: 10;"
-                );
-            });
-
-// Rời chuột: thu lại
-            removeTaskButton.setOnMouseExited(e -> {
-                Timeline timeline = new Timeline(
-                        new KeyFrame(Duration.millis(300),
-                                new KeyValue(removeTaskButton.prefWidthProperty(), 40))
-                );
-                timeline.play();
-                removeTaskButton.setStyle(
-                        "-fx-background-color: transparent; " +
-                                "-fx-text-fill: white; " +
-                                "-fx-font-weight: bold; " +
-                                "-fx-font-size: 14px; " +
-                                "-fx-background-radius: 10;"
-                );
-            });
+            titleBox.getChildren().addAll(titleText, new Region(), doneButton);
+            HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
 
 
-            textVBox.setOnMouseEntered(e -> textVBox.setStyle("-fx-background-color: #34495e; -fx-padding: 10; -fx-background-radius: 10;"));
-            textVBox.setOnMouseExited(e -> textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10;"));
-            textVBox.setStyle("-fx-background-color: #2c3e50; -fx-padding: 10; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 2);");
-
+// VBox chứa text
+            VBox textVBox = new VBox(5, titleBox, descriptionText);
+            textVBox.getStyleClass().add("task-box");
             HBox.setHgrow(textVBox, Priority.ALWAYS);
-            removeTaskButton.setMaxWidth(40); // hoặc setMin/Pref cho đẹp
-            removeTaskButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE); // Fill full width & height
-            VBox.setVgrow(removeTaskButton, Priority.ALWAYS);               // Cho phép button mở rộng theo chiều cao
 
+// Remove Button
+            Button removeTaskButton = new Button("X");
+            removeTaskButton.getStyleClass().add("remove-btn");
+            removeTaskButton.setPrefWidth(40);
+            removeTaskButton.setMaxHeight(Double.MAX_VALUE);
+
+// Animation expand width
+            removeTaskButton.setOnMouseEntered(_ -> {
+                Timeline timeline = new Timeline(new KeyFrame(Duration.millis(300),
+                        new KeyValue(removeTaskButton.prefWidthProperty(), 75)));
+                timeline.play();
+            });
+            removeTaskButton.setOnMouseExited(_ -> {
+                Timeline timeline = new Timeline(new KeyFrame(Duration.millis(300),
+                        new KeyValue(removeTaskButton.prefWidthProperty(), 40)));
+                timeline.play();
+            });
+
+// Wrapper cho nút
             VBox buttonWrapper = new VBox(removeTaskButton);
             buttonWrapper.setAlignment(Pos.CENTER);
             buttonWrapper.setMaxHeight(Double.MAX_VALUE);
 
-            taskHBox.getChildren().addAll(textVBox, buttonWrapper);
+// Task container
+            HBox taskHBox = new HBox(textVBox, buttonWrapper);
+            taskHBox.setAlignment(Pos.CENTER_LEFT);
 
-            removeTaskButton.setOnAction(e ->{
+// Remove action
+            removeTaskButton.setOnAction(_ -> {
                 root.getChildren().remove(taskHBox);
                 MainController.removeTask(temp);
             });
 
-            root.getChildren().add(taskHBox); // root là VBox chứa toàn bộ task
+// Add vào root
+            root.getChildren().add(taskHBox);
+
         }
         return root;
     }
@@ -269,7 +254,7 @@ public class View {
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
         Scene scene = new Scene(root, 600, 600);
-        scene.getStylesheets().add(View.class.getResource("/style.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(View.class.getResource("/style.css")).toExternalForm());
 
         TextField usernameFeild = new TextField();
         TextField passWordFeild = new TextField();
@@ -320,24 +305,22 @@ public class View {
         HBox buttonsHBox = new HBox(350);
         buttonsHBox.getChildren().addAll(goBackButton, signUpButton);
 
-        goBackButton.setOnAction(e ->{
-            MainController.signInUpController(stage, true);
-        });
+        goBackButton.setOnAction(_ -> MainController.signInUpController(stage, true));
 
-        signUpButton.setOnAction(e ->{
+        signUpButton.setOnAction(_ ->{
             String userNameInput = usernameFeild.getText();
             String userPassWord = passWordFeild.getText();
             String userPassWordRetype = passWordRetypeFeild.getText();
-            if(passwordRetypeVBox.getChildren().getLast() instanceof Label label)
+            if(passwordRetypeVBox.getChildren().getLast() instanceof Label)
             {
-                passwordRetypeVBox.getChildren().remove(passwordRetypeVBox.getChildren().size() - 1);
+                passwordRetypeVBox.getChildren().removeLast();
             }
             if(userPassWordRetype.equals(userPassWord))
             {
                 Node lastNode = root.getChildren().getLast();
-                if(lastNode instanceof Label label)
+                if(lastNode instanceof Label)
                 {
-                    root.getChildren().remove(root.getChildren().size() - 1);
+                    root.getChildren().removeLast();
                 }
 
                 if(MainController.signUpController(userNameInput, userPassWord))

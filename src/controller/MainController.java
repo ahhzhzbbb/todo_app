@@ -5,7 +5,6 @@ import javafx.stage.Stage;
 import model.Task;
 import view.View;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainController {
@@ -15,7 +14,7 @@ public class MainController {
 
         if (success) {
             System.out.println("Đăng nhập thành công!");
-            stage.setScene(View.getMainView(username));
+            stage.setScene(View.getMainView(stage, username));
             return true;
         } else {
             System.out.println("Sai tài khoản hoặc mật khẩu!");
@@ -56,7 +55,7 @@ public class MainController {
 
     public static List<Task> showAllTask(String username)
     {
-        List<Task> res = new ArrayList<>();
+        List<Task> res;
         res = DBconnect.getAllTaskData(username);
         return res;
     }
@@ -69,5 +68,10 @@ public class MainController {
     public static void tickDoneTask(Task doneTask)
     {
         DBconnect.tickDoneTaskInDB(doneTask);
+    }
+
+    public static void signOutController(Stage stage)
+    {
+        stage.setScene(View.getLoginView(stage));
     }
 }

@@ -51,7 +51,7 @@ public class DBconnect {
         }
     }
 
-    public static int addNewTask(String description, String title, String username)
+    public static void addNewTask(String description, String title, String username)
     {
         try{
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
@@ -74,11 +74,9 @@ public class DBconnect {
             stmt.close();
             stmt1.close();
             conn.close();
-            return taskId;
         }
         catch (SQLException e){
             System.out.println("Lỗi không thể thêm task");
-            return 0;
         }
     }
 
@@ -143,9 +141,10 @@ public class DBconnect {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
             System.out.println("Kết nối thành công!");
 
-            PreparedStatement stmt1 = conn.prepareStatement("UPDATE task\n" +
-                    "set done = not done\n" +
-                    "where id = ?");
+            PreparedStatement stmt1 = conn.prepareStatement("""
+                    UPDATE task
+                    set done = not done
+                    where id = ?""");
             stmt1.setInt(1, task.getId());
             stmt1.executeUpdate();
 
