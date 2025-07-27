@@ -23,8 +23,8 @@ import javafx.scene.text.Font;
 import javafx.scene.paint.Color;
 
 
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDate;
+import java.util.*;
 
 public class View {
     public static Scene getLoginView(Stage stage)
@@ -37,7 +37,7 @@ public class View {
         scene.getStylesheets().add(Objects.requireNonNull(View.class.getResource("/style.css")).toExternalForm());
 
         TextField usernameFeild = new TextField();
-        TextField passWordFeild = new TextField();
+        PasswordField passWordFeild = new PasswordField();
         Button signInButton = new Button("Sign in");
         Button signUpButton = new Button("Sign up");
         Label lb = new Label("Sai tên đăng nhập hoặc mật khẩu");
@@ -96,6 +96,7 @@ public class View {
         ScrollPane scrollPane = new ScrollPane(root);
         scrollPane.setFitToWidth(true);
         Scene scene = new Scene(scrollPane, 800, 600);
+        scene.setFill(Color.LIGHTGRAY);
         scene.getStylesheets().add(
                 Objects.requireNonNull(View.class.getResource("/MainStyle.css")).toExternalForm()
         );
@@ -173,81 +174,96 @@ public class View {
     {
         //load các tasks trong db của user
         VBox root = new VBox(2);
-        List<Task> list;
+        List<Task> list; //danh sách các tasks được lấy từ database
         list = MainController.showAllTask(username);
-        for(int i = 0; i < list.size() - 1; i++)
+        Map<LocalDate, List<Task>> grouped;
+        grouped = MainController.groupByDate(list);
+        for(var entry : grouped.entrySet())
         {
-            Task temp = list.get(i);
+            VBox sameDateTasksVBox = new VBox();
+            sameDateTasksVBox.setStyle("-fx-background-color: #2b2b2b;");
+            if (entry.getKey() == null) continue; // bỏ qua task không có ngày
 
+            TitledPane sameDateTasks = new TitledPane(entry.getKey().toString(), sameDateTasksVBox);
+            for(Task temp : entry.getValue())
+            {
+                HBox taskHBox = createHBoxTasks(temp);
+                sameDateTasksVBox.getChildren().add(taskHBox);
+            }
+            root.getChildren().add(sameDateTasks);
+        }
+
+        return root;
+    }
+
+    public static HBox createHBoxTasks(Task task)
+    {
 // Title
-            Text titleText = new Text(temp.getTitle());
-            titleText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-            titleText.setFill(Color.GREEN);
+        Text titleText = new Text(task.getTitle());
+        titleText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        titleText.setFill(Color.GREEN);
 
 // Description
-            Text descriptionText = new Text(temp.getDescription());
-            descriptionText.setFill(Color.WHITE);
-            descriptionText.setWrappingWidth(300);
+        Text descriptionText = new Text(task.getDescription());
+        descriptionText.setFill(Color.WHITE);
+        descriptionText.setWrappingWidth(300);
 
 // Checkbox
-            CheckBox doneButton = new CheckBox();
-            doneButton.setSelected(temp.isDone());
-            doneButton.setOnAction(_ -> {
-                SoundController.playTick();
-                MainController.tickDoneTask(temp);
-                temp.setDone(!temp.isDone());
-            });
+        CheckBox doneButton = new CheckBox();
+        doneButton.setSelected(task.isDone());
+        doneButton.setOnAction(_ -> {
+            SoundController.playTick();
+            MainController.tickDoneTask(task);
+            task.setDone(!task.isDone());
+        });
 
 // Title + Checkbox
-            HBox titleBox = new HBox();
-            titleBox.getChildren().addAll(titleText, new Region(), doneButton);
-            HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
+        HBox titleBox = new HBox();
+        titleBox.getChildren().addAll(titleText, new Region(), doneButton);
+        HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
 
 
 // VBox chứa text
-            VBox textVBox = new VBox(5, titleBox, descriptionText);
-            textVBox.getStyleClass().add("task-box");
-            HBox.setHgrow(textVBox, Priority.ALWAYS);
+        VBox textVBox = new VBox(5, titleBox, descriptionText);
+        textVBox.getStyleClass().add("task-box");
+        HBox.setHgrow(textVBox, Priority.ALWAYS);
 
 // Remove Button
-            Button removeTaskButton = new Button("X");
-            removeTaskButton.getStyleClass().add("remove-btn");
-            removeTaskButton.setPrefWidth(40);
-            removeTaskButton.setMaxHeight(Double.MAX_VALUE);
+        Button removeTaskButton = new Button("X");
+        removeTaskButton.getStyleClass().add("remove-btn");
+        removeTaskButton.setPrefWidth(40);
+        removeTaskButton.setMaxHeight(Double.MAX_VALUE);
 
 // Animation expand width
-            removeTaskButton.setOnMouseEntered(_ -> {
-                Timeline timeline = new Timeline(new KeyFrame(Duration.millis(300),
-                        new KeyValue(removeTaskButton.prefWidthProperty(), 75)));
-                timeline.play();
-            });
-            removeTaskButton.setOnMouseExited(_ -> {
-                Timeline timeline = new Timeline(new KeyFrame(Duration.millis(300),
-                        new KeyValue(removeTaskButton.prefWidthProperty(), 40)));
-                timeline.play();
-            });
+        removeTaskButton.setOnMouseEntered(_ -> {
+            Timeline timeline = new Timeline(new KeyFrame(Duration.millis(300),
+                    new KeyValue(removeTaskButton.prefWidthProperty(), 75)));
+            timeline.play();
+        });
+        removeTaskButton.setOnMouseExited(_ -> {
+            Timeline timeline = new Timeline(new KeyFrame(Duration.millis(300),
+                    new KeyValue(removeTaskButton.prefWidthProperty(), 40)));
+            timeline.play();
+        });
 
 // Wrapper cho nút
-            VBox buttonWrapper = new VBox(removeTaskButton);
-            buttonWrapper.setAlignment(Pos.CENTER);
-            buttonWrapper.setMaxHeight(Double.MAX_VALUE);
+        VBox buttonWrapper = new VBox(removeTaskButton);
+        buttonWrapper.setAlignment(Pos.CENTER);
+        buttonWrapper.setMaxHeight(Double.MAX_VALUE);
 
 // Task container
-            HBox taskHBox = new HBox(textVBox, buttonWrapper);
-            taskHBox.setAlignment(Pos.CENTER_LEFT);
+        HBox taskHBox = new HBox(textVBox, buttonWrapper);
+        taskHBox.setAlignment(Pos.CENTER_LEFT);
+
 
 // Remove action
-            removeTaskButton.setOnAction(_ -> {
-                root.getChildren().remove(taskHBox);
-                MainController.removeTask(temp);
-            });
-
-// Add vào root
-            root.getChildren().add(taskHBox);
-
-        }
-        return root;
+        removeTaskButton.setOnAction(_ -> {
+            ((Pane) taskHBox.getParent()).getChildren().remove(taskHBox);
+            MainController.removeTask(task);
+        });
+        return taskHBox;
     }
+
     public static Scene getSignUpScene(Stage stage)
     {
         VBox root = new VBox(20);

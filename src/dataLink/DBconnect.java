@@ -3,6 +3,7 @@ package dataLink;
 import model.Task;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +87,7 @@ public class DBconnect {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/todo_app", "hoang", "123456");
             System.out.println("Kết nối thành công!");
             String sql = """
-                    select id, title, description, done
+                    select id, title, description, done, time
                     from TASK\s
                     join LINKED on LINKED.idTask = TASK.id
                     where LINKED.username = ?
@@ -99,7 +100,7 @@ public class DBconnect {
             List<Task> res = new ArrayList<>();
             while(output.next())
             {
-                res.add(new Task(output.getInt("id") , output.getString("description"), output.getString("title"), output.getBoolean("done")));
+                res.add(new Task(output.getInt("id") , output.getString("description"), output.getString("title"), output.getBoolean("done"), output.getObject("time", LocalDate.class)));
             }
 
             conn.close();

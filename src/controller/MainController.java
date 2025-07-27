@@ -5,7 +5,11 @@ import javafx.stage.Stage;
 import model.Task;
 import view.View;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainController {
     public static boolean loginController(Stage stage, String username, String password) {
@@ -73,5 +77,16 @@ public class MainController {
     public static void signOutController(Stage stage)
     {
         stage.setScene(View.getLoginView(stage));
+    }
+
+    public static Map<LocalDate, List<Task>> groupByDate(List<Task> tasks) {
+        Map<LocalDate, List<Task>> grouped = new LinkedHashMap<>();
+
+        for (Task t : tasks) {
+            grouped.putIfAbsent(t.getDateTime(), new ArrayList<>());
+            grouped.get(t.getDateTime()).add(t);
+        }
+
+        return grouped;
     }
 }

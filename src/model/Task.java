@@ -1,11 +1,13 @@
 package model;
 
+import java.time.LocalDate;
+
 public class Task {
     private int id;
     private String title;
     private String description;
     private boolean done;
-
+    private LocalDate dateTime;
 
     // Constructor đầy đủ
     public Task(int id, String description, String title) {
@@ -15,9 +17,10 @@ public class Task {
         this.done = false;
     }
 
-    public Task(int id, String description, String title, boolean done) {
+    public Task(int id, String description, String title, boolean done, LocalDate dateTime) {
         this(id, description, title);
         this.done = done;
+        this.dateTime = dateTime;
     }
 
     public void setTitle(String title) {
@@ -50,5 +53,13 @@ public class Task {
 
     public String getDescription() {
         return description;
+    }
+
+    public void setDateTime(LocalDate dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    public LocalDate getDateTime() {
+        return dateTime;
     }
 }
